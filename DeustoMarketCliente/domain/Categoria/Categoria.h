@@ -12,9 +12,21 @@
 class Categoria {
 
 private:
+	static int contador_ids;
 	int id_categoria;
-	std::string nombre_categoria;
+	char* nombre_categoria;
 
+public:
+
+	Categoria();
+	Categoria(int id_categoria);
+
+	int getID() const;
+	char* getNombre() const;
+
+	void setNombre(char* nuevo_nombre);
+
+	void visualizar() const;
 
 
 };

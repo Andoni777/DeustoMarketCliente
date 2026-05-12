@@ -9,13 +9,14 @@
 #define DOMAIN_EMPLEADO_H_
 #include <string>
 #include <iostream>
-class Empleado {
+
+#include "..\Persona\Persona.h"
+
+class Empleado: public Persona {
 
 private:
-	std::string dni_empleado;
-	std::string nombre_empleado;
-	std::string puesto;
-	int id_super;
+	char* puesto;
+	int salario;
 
 
 
