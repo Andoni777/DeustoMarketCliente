@@ -22,7 +22,7 @@ public:
 	Cliente(char* nombre, int edad, int id_super, char* email);
 
 	char* getEmail() const;
-	void setEmail();
+	void setEmail(char* nuevo_email);
 
 	virtual void visualizar() const;
 

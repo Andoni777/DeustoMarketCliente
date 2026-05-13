@@ -19,7 +19,8 @@ int contador_id = 0;
 		this->id = ++contador_id;
 		this->edad = edad;
 		this->id_super = id_super;
-		this->nombre = nombre;
+		this->nombre = new char[strlen(nombre) + 1];
+		strcpy(this->nombre, nombre);
 	}
 
 	Persona::~Persona()
