@@ -1,117 +1,160 @@
 #include <winsock2.h>
 #include <iostream>
 #include <string>
-#include "Protocolo.h"
-#include "../domain/Interfaz.h"
-#include <iostream>
+#include <vector>
+#include "../domain/SuperMercado/Supermercado.h"
+#include "../domain/Protocolo.h"
+#include "Interfaz.h"
 using namespace std;
 
 int main(int argc, char **argv) {
-	Interfaz gui;
-	int opcion;
+    Interfaz gui;
+    int opcion;
 
-	WSADATA wsaData;
-	SOCKET s;
-	struct sockaddr_in server;
+    // Variables para optimizar accesos a la BDD (Caché local)
+    vector<SuperMercado> cacheSupers;
+    bool datosCargados = false; // Nos dice si ya hemos descargado los datos alguna vez
 
-	// 1. Inicializar Winsock
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-		cout << "Error en WSAStartup" << endl;
-		return -1;
-	}
+    WSADATA wsaData;
+    SOCKET s;
+    struct sockaddr_in server;
 
-	// 2. Crear el socket
-	s = socket(AF_INET, SOCK_STREAM, 0);
-	if (s == INVALID_SOCKET) {
-		cout << "No se pudo crear el socket" << endl;
-		WSACleanup();
-		return -1;
-	}
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        cout << "Error en WSAStartup" << endl;
+        return -1;
+    }
 
-	// 3. Configurar la dirección del servidor
-	server.sin_addr.s_addr = inet_addr("127.0.0.1"); // IP local (el mismo PC)
-	server.sin_family = AF_INET;
-	server.sin_port = htons(6000); // El mismo puerto que el servidor
+    s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) {
+        cout << "No se pudo crear el socket" << endl;
+        WSACleanup();
+        return -1;
+    }
 
-	// 4. Conectar
-	if (connect(s, (struct sockaddr*)&server, sizeof(server)) < 0) {
-		cout << "Error de conexion. ¿Esta el servidor encendido?" << endl;
-		closesocket(s);
-		WSACleanup();
-		return -1;
-	}
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_family = AF_INET;
+    server.sin_port = htons(6000);
 
-	cout << "Conectado al servidor de DeustoMarket!" << endl;
+    if (connect(s, (struct sockaddr*)&server, sizeof(server)) < 0) {
+        cout << "Error de conexion. ¿Esta el servidor encendido?" << endl;
+        closesocket(s);
+        WSACleanup();
+        return -1;
+    }
 
-	do {
-	    opcion = gui.mostrarMenu(); // Recibimos la opción
-	    switch(opcion) {
+    cout << "Conectado al servidor de DeustoMarket!" << endl;
 
-	    	case 1: { // Gestion supers
-	    			int subOpcion = gui.mostrarMenuGestSuper();
+    do {
+        opcion = gui.mostrarMenu();
+        switch(opcion) {
 
-	    			switch(subOpcion){
+            case 1: { // Gestion supers
+                int subOpcion = gui.mostrarMenuGestSuper();
 
-	    				case 1: {// Añadir super
-	    					OpCode op = OPC_ADD_SUPER;
-							SupermercadoData data = gui.pedirDatosSuper(); // Interfaz pide datos al usuario
-							send(s, (char*)&op, sizeof(OpCode), 0);
-							send(s, (char*)&data, sizeof(SupermercadoData), 0);
-							cout << "Peticion de alta enviada." << endl;
-							break;
-	    				}
+                switch(subOpcion){
 
-	    				case 2: { // Modificar super
-	    					OpCode op = OPC_UPDATE_SUPER;
-	    					SupermercadoData data = gui.pedirDatosSuper(); // Pedimos los nuevos datos
-	    					send(s, (char*)&op, sizeof(OpCode), 0);
-							send(s, (char*)&data, sizeof(SupermercadoData), 0);
-							break;
-	    				}
+                    case 1: { // Añadir super
+                        OpCode op = OPC_ADD_SUPER;
+                        SupermercadoData data = gui.pedirDatosSuper();
+                        send(s, (char*)&op, sizeof(OpCode), 0);
+                        send(s, (char*)&data, sizeof(SupermercadoData), 0);
+                        cout << "Peticion de alta enviada." << endl;
 
-	    				case 3: { // Eliminar super
-	    					OpCode op = OPC_DEL_SUPER;
-	    					SupermercadoData data;
-							data.id_super = gui.pedirIdSuper(); // Solo necesitamos el ID para borrar
-							send(s, (char*)&op, sizeof(OpCode), 0);
-							send(s, (char*)&data, sizeof(SupermercadoData), 0);
-							break;
-	    				}
+                        // Si la cache estaba cargada, añadimos el nuevo objeto localmente
+                        if (datosCargados) {
+                            SuperMercado nuevo(data.id_super, data.nombre, data.direccion);
+                            cacheSupers.push_back(nuevo);
+                        }
+                        break;
+                    }
 
-	    				case 4: {// Mostrar supers
-	    					OpCode op = OPC_GET_ALL_SUPER;
-							send(s, (char*)&op, sizeof(OpCode), 0);
+                    case 2: { // Modificar super
+                        OpCode op = OPC_UPDATE_SUPER;
+                        SupermercadoData data = gui.pedirDatosSuper();
+                        send(s, (char*)&op, sizeof(OpCode), 0);
+                        send(s, (char*)&data, sizeof(SupermercadoData), 0);
+                        cout << "Peticion de modificacion enviada." << endl;
 
-							SupermercadoData recibido;
-							cout << "\n--- LISTADO DE SUPERMERCADOS ---" << endl;
+                        // Modificamos localmente el objeto
+                        if (datosCargados) {
+                            for (size_t i = 0; i < cacheSupers.size(); i++) {
+                                if (cacheSupers[i].getIdSuper() == data.id_super) {
+                                    cacheSupers[i].setNombreSuper(data.nombre);
+                                    cacheSupers[i].setDireccion(data.direccion);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    }
 
-							// El cliente esta em escucha hasta recibir id = -1
-							while(recv(s, (char*)&recibido, sizeof(SupermercadoData), 0) > 0) {
-								if(recibido.id_super == -1) break; // Señal de fin enviada por el server
-								gui.mostrarUnSuper(recibido);
-							}
-							break;
-	    				}
-	    			}
-	                break;
+                    case 3: { // Eliminar super
+                        OpCode op = OPC_DEL_SUPER;
+                        SupermercadoData data;
+                        data.id_super = gui.pedirIdSuper();
+                        send(s, (char*)&op, sizeof(OpCode), 0);
+                        send(s, (char*)&data, sizeof(SupermercadoData), 0);
+                        cout << "Peticion de borrado enviada." << endl;
 
-	            }
-	    	case 2:
-	    		 	 gui.mostrarMenuGestIyP();
-	    		 	 break;
+                        // OPTIMIZACIÓN: Eliminamos de nuestra lista local
+                        if (datosCargados) {
+                            for (auto it = cacheSupers.begin(); it != cacheSupers.end(); ++it) {
+                                if (it->getIdSuper() == data.id_super) {
+                                    cacheSupers.erase(it); // Se elimina del vector y el destructor de la clase libera su memoria
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    }
 
-	        case 3:
-	             	 gui.mostrarMenuGestEmpleado();
+                    case 4: { // Mostrar supers
+                        // Si NO están cargados, vamos al servidor
+                        if (!datosCargados) {
+                            OpCode op = OPC_GET_ALL_SUPER;
+                            send(s, (char*)&op, sizeof(OpCode), 0);
 
-	        }
-	    } while (opcion != 0);
+                            SupermercadoData recibido;
+                            while(recv(s, (char*)&recibido, sizeof(SupermercadoData), 0) > 0) {
+                                if(recibido.id_super == -1) break;
 
-		OpCode exit = OPC_EXIT;
-		send(s, (char*)&exit, sizeof(OpCode), 0);
-		closesocket(s);
-	    WSACleanup();
-	}
+                                // Convertimos el STRUCT de red a OBJETO de C++
+                                SuperMercado sm(recibido.id_super, recibido.nombre, recibido.direccion);
+                                // Lo metemos en el vector
+                                cacheSupers.push_back(sm);
+                            }
+                            datosCargados = true; // Ya no volveremos a pedirlo al servidor
+                            cout << "\n[INFO] Datos descargados del servidor y almacenados en cache." << endl;
+                        }
 
+                        // Pintamos los datos leyendo EXCLUSIVAMENTE de la memoria RAM del Cliente
+                        cout << "\n--- LISTADO DE SUPERMERCADOS (CACHE LOCAL) ---" << endl;
+                        for (size_t i = 0; i < cacheSupers.size(); i++) {
+                            // Convertimos el objeto de vuelta a un struct temporal para reutilizar tu funcion gui.mostrarUnSuper
+                            SupermercadoData temp;
+                            temp.id_super = cacheSupers[i].getIdSuper();
+                            strcpy(temp.nombre, cacheSupers[i].getNombreSuper());
+                            strcpy(temp.direccion, cacheSupers[i].getDireccion());
 
+                            gui.mostrarUnSuper(temp);
+                        }
+                        break;
+                    }
+                }
+                break;
+            }
+            case 2:
+                gui.mostrarMenuGestIyP();
+                break;
 
+            case 3:
+                gui.mostrarMenuGestEmpleado();
+                break;
+        }
+    } while (opcion != 0);
 
+    OpCode exit = OPC_EXIT;
+    send(s, (char*)&exit, sizeof(OpCode), 0);
+    closesocket(s);
+    WSACleanup();
+}

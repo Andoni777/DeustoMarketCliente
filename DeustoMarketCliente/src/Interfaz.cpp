@@ -5,8 +5,16 @@
  *      Author: andoni.g
  */
 
-#include "../domain/Interfaz.h"
+#include "Interfaz.h"
+
 #include <iostream>
+#include <string>
+#include <cstring>
+
+using namespace std;
+
+Interfaz::Interfaz() {
+}
 
 int Interfaz::leerOpcion(){
 	int seleccion;
@@ -75,7 +83,46 @@ int Interfaz::mostrarMenu(){
 	return leerOpcion();
 }
 
+// Funciones auxiliares
 
+//Supers
 
+SupermercadoData Interfaz::pedirDatosSuper(){
+	SupermercadoData nuevo;
+	string temp;
 
+	cout << "\n--- INTRODUCIR DATOS DEL SUPERMERCADO ---" << endl;
 
+	cout << "ID del Supermercado (numero): ";
+	cin >> nuevo.id_super;
+
+	// Limpiar el buffer del cin por si acaso
+	cin.ignore(1000, '\n');
+
+	cout << "Nombre: ";
+	getline(cin, temp);
+	strncpy(nuevo.nombre, temp.c_str(), sizeof(nuevo.nombre) - 1);
+	nuevo.nombre[sizeof(nuevo.nombre) - 1] = '\0'; // Aseguramos el cierre del string
+
+	cout << "Direccion: ";
+	getline(cin, temp);
+	strncpy(nuevo.direccion, temp.c_str(), sizeof(nuevo.direccion) - 1);
+	nuevo.direccion[sizeof(nuevo.direccion) - 1] = '\0';
+
+	return nuevo;
+}
+
+int Interfaz::pedirIdSuper(){
+	int id;
+	cout << "Introduce el ID del supermercado: ";
+	cin >> id;
+	return id;
+}
+
+void Interfaz::mostrarUnSuper(const SupermercadoData& d){
+	cout << "-------------------------------------------" << endl;
+	cout << "  ID:        " << d.id_super << endl;
+	cout << "  NOMBRE:    " << d.nombre << endl;
+	cout << "  DIRECCION: " << d.direccion << endl;
+
+}

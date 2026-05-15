@@ -5,26 +5,32 @@
  *      Author: andoni.g
  */
 
-#ifndef DOMAIN_INTERFAZ_H_
-#define DOMAIN_INTERFAZ_H_
-
+#ifndef SRC_INTERFAZ_H_
+#define SRC_INTERFAZ_H_
+#include "../domain/Protocolo.h"
 class Interfaz {
 
 public:
+	Interfaz();
 	int leerOpcion();
 
 	// Menu Principal
 	int mostrarMenu();
 
-	//SubMenus
+	// SubMenus
 	int mostrarMenuGestSuper();
 	int mostrarMenuGestIyP();
 	int mostrarMenuGestEmpleado();
 	int mostrarLogs();
 
+	// Funciones auxiliares
 
+	// Supers
+	SupermercadoData pedirDatosSuper();
+	int pedirIdSuper();
+	void mostrarUnSuper(const SupermercadoData& s);
 
 };
 
 
-#endif /* DOMAIN_INTERFAZ_H_ */
+#endif /* SRC_INTERFAZ_H_ */
