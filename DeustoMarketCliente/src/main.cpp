@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
                             cout << "\n[INFO] Datos descargados del servidor y almacenados en cache." << endl;
                         }
 
-                        // Pintamos los datos leyendo EXCLUSIVAMENTE de la memoria RAM del Cliente
+                        // Pintamos los datos leyendo de la memoria RAM del Cliente
                         cout << "\n--- LISTADO DE SUPERMERCADOS (CACHE LOCAL) ---" << endl;
                         for (size_t i = 0; i < cacheSupers.size(); i++) {
                             // Convertimos el objeto de vuelta a un struct temporal para reutilizar tu funcion gui.mostrarUnSuper
