@@ -10,7 +10,9 @@
 
 // Códigos de operacion
 enum OpCode {
-	// Supermercados
+		// Login
+		OPC_LOGIN,
+		// Supermercados
 	    OPC_ADD_SUPER, OPC_UPDATE_SUPER, OPC_DEL_SUPER, OPC_GET_ALL_SUPER,
 
 	    // Empleados
@@ -23,6 +25,11 @@ enum OpCode {
 };
 
 // Estructura para enviar datos
+typedef struct {
+    char usuario[30];
+    char contrasena[30];
+} LoginData;
+
 typedef struct {
     int id_super;
     char nombre[31];

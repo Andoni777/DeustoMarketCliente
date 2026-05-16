@@ -7,11 +7,37 @@
 #include "Interfaz.h"
 using namespace std;
 
+bool verificarLoginServidor(SOCKET s) {
+    LoginData datos;
+    cout << "=== LOGIN DEUSTOMARKET ===" << endl;
+    cout << "Usuario: ";
+    cin >> datos.usuario;
+    cout << "Contrasena: ";
+    cin >> datos.contrasena;
+
+    // 1. Enviamos la operación de Login y los datos
+    OpCode op = OPC_LOGIN;
+    send(s, (char*)&op, sizeof(OpCode), 0);
+    send(s, (char*)&datos, sizeof(LoginData), 0);
+
+    // 2. Esperamos la respuesta del servidor (un simple int: 1 = OK, 0 = Error)
+    int respuesta = 0;
+    recv(s, (char*)&respuesta, sizeof(int), 0);
+
+    if (respuesta == 1) {
+        cout << "\n¡Login correcto! Bienvenido." << endl;
+        return true;
+    } else {
+        cout << "\n[ERROR] Usuario o contrasena incorrectos." << endl;
+        return false;
+    }
+}
+
 int main(int argc, char **argv) {
     Interfaz gui;
     int opcion;
 
-    // Variables para optimizar accesos a la BDD (Caché local)
+    // Variables para optimizar accesos a la BDD (Cache local)
     vector<SuperMercado> cacheSupers;
     bool datosCargados = false; // Nos dice si ya hemos descargado los datos alguna vez
 
@@ -43,6 +69,14 @@ int main(int argc, char **argv) {
     }
 
     cout << "Conectado al servidor de DeustoMarket!" << endl;
+
+    if (!verificarLoginServidor(s)) {
+    	OpCode exit = OPC_EXIT;
+    	send(s, (char*)&exit, sizeof(OpCode), 0);
+    	closesocket(s);
+    	WSACleanup();
+    	return 0;
+    }
 
     do {
         opcion = gui.mostrarMenu();
