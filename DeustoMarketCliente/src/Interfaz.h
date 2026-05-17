@@ -30,6 +30,10 @@ public:
 	int pedirIdSuper();
 	void mostrarUnSuper(const SupermercadoData& s);
 
+	// Empleados
+	EmpleadoData pedirDatosEmpleado();
+	void mostrarUnEmpleado(const EmpleadoData& e);
+	void pedirDniEmpleado(char* dni);
 };
 
 

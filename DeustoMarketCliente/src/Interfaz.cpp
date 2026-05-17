@@ -119,10 +119,51 @@ int Interfaz::pedirIdSuper(){
 	return id;
 }
 
+
 void Interfaz::mostrarUnSuper(const SupermercadoData& d){
 	cout << "-------------------------------------------" << endl;
 	cout << "  ID:        " << d.id_super << endl;
 	cout << "  NOMBRE:    " << d.nombre << endl;
 	cout << "  DIRECCION: " << d.direccion << endl;
 
+}
+
+EmpleadoData Interfaz::pedirDatosEmpleado() {
+    EmpleadoData nuevo;
+    string temp;
+
+    cout << "\n--- INTRODUCIR DATOS DEL EMPLEADO ---" << endl;
+
+    cout << "DNI: ";
+    cin >> nuevo.dni_empleado;
+    cin.ignore(1000, '\n'); // Limpiamos el buffer tras usar cin
+
+    cout << "Nombre: ";
+    getline(cin, temp);
+    strncpy(nuevo.nombre_empleado, temp.c_str(), sizeof(nuevo.nombre_empleado) - 1);
+    nuevo.nombre_empleado[sizeof(nuevo.nombre_empleado) - 1] = '\0';
+
+    cout << "Puesto: ";
+    getline(cin, temp);
+    strncpy(nuevo.puesto, temp.c_str(), sizeof(nuevo.puesto) - 1);
+    nuevo.puesto[sizeof(nuevo.puesto) - 1] = '\0';
+
+    cout << "ID del Supermercado asignado: ";
+    cin >> nuevo.id_super;
+
+    return nuevo;
+}
+
+void Interfaz::pedirDniEmpleado(char* dni) {
+    cout << "Introduce el DNI del empleado: ";
+    cin >> dni;
+    cin.ignore(1000, '\n');
+}
+
+void Interfaz::mostrarUnEmpleado(const EmpleadoData& e) {
+    cout << "-------------------------------------------" << endl;
+    cout << "  DNI:       " << e.dni_empleado << endl;
+    cout << "  NOMBRE:    " << e.nombre_empleado << endl;
+    cout << "  PUESTO:    " << e.puesto << endl;
+    cout << "  ID SUPER:  " << e.id_super << endl;
 }

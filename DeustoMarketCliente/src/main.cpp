@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "../domain/Empleado/Empleado.h"
 #include "../domain/SuperMercado/Supermercado.h"
 #include "../domain/Protocolo.h"
 #include "Interfaz.h"
@@ -40,6 +41,9 @@ int main(int argc, char **argv) {
     // Variables para optimizar accesos a la BDD (Cache local)
     vector<SuperMercado> cacheSupers;
     bool datosCargados = false; // Nos dice si ya hemos descargado los datos alguna vez
+
+    vector<Empleado> cacheEmpleados;
+    bool datosEmpleadosCargados = false;
 
     WSADATA wsaData;
     SOCKET s;
@@ -182,8 +186,115 @@ int main(int argc, char **argv) {
                 break;
 
             case 3:
-                gui.mostrarMenuGestEmpleado();
-                break;
+            	int subOpcion = gui.mostrarMenuGestEmpleado();
+
+            	switch(subOpcion){
+            		case 1: { //Añadir empleado
+            			OpCode op = OPC_ADD_EMPLEADO;
+            			EmpleadoData data = gui.pedirDatosEmpleado();
+            			send(s, (char*)&op, sizeof(OpCode), 0);
+            			send(s, (char*)&data, sizeof(EmpleadoData), 0);
+            			cout << "Peticion de alta enviada al servidor." << endl;
+            			if (datosEmpleadosCargados) {
+            			    Empleado nuevoEmp(data.dni_empleado, data.nombre_empleado, 0, data.id_super, data.puesto, 0);
+            			    cacheEmpleados.push_back(nuevoEmp);
+            			}
+            			break;
+            		}
+
+            		case 2: { // Eliminar empleado
+            			OpCode op = OPC_DEL_EMPLEADO;
+            			EmpleadoData data;
+            		    gui.pedirDniEmpleado(data.dni_empleado);
+            		    send(s, (char*)&op, sizeof(OpCode), 0);
+            		    send(s, (char*)&data, sizeof(EmpleadoData), 0);
+            		    cout << "Peticion de baja enviada al servidor." << endl;
+            		    if (datosEmpleadosCargados) {
+            		    	for (auto it = cacheEmpleados.begin(); it != cacheEmpleados.end(); ++it) {
+            		    		if (strcmp(it->getDni(), data.dni_empleado) == 0) {
+            		    			cacheEmpleados.erase(it);
+            		    			break;
+            		    		}
+            		    	}
+            		    }
+            		    break;
+            		}
+            		case 3: { // Modificar empleado
+            			OpCode op = OPC_UPDATE_EMPLEADO;
+            			cout << "\n--- Modificando Empleado ---" << endl;
+            			cout << "NOTA: Introduce el DNI del empleado que quieres modificar, y luego sus nuevos datos." << endl;
+
+            			EmpleadoData data = gui.pedirDatosEmpleado();
+
+            			send(s, (char*)&op, sizeof(OpCode), 0);
+            			send(s, (char*)&data, sizeof(EmpleadoData), 0);
+            			cout << "Peticion de modificacion enviada al servidor." << endl;
+
+            			if (datosEmpleadosCargados) {
+            				for (size_t i = 0; i < cacheEmpleados.size(); i++) {
+            					if (strcmp(cacheEmpleados[i].getDni(), data.dni_empleado) == 0) {
+            						cacheEmpleados[i].setNombre(data.nombre_empleado);
+            						cacheEmpleados[i].setPuesto(data.puesto);
+            						cacheEmpleados[i].setSuper(data.id_super);
+            						break;
+            					}
+            				}
+            			}
+            			break;
+            		}
+            		case 4: { // Mostrar todos los empleados
+            			if (!datosEmpleadosCargados) {
+            				OpCode op = OPC_GET_ALL_EMPLEADO;
+            				send(s, (char*)&op, sizeof(OpCode), 0);
+
+            				EmpleadoData recibido;
+            				while(recv(s, (char*)&recibido, sizeof(EmpleadoData), 0) > 0) {
+            					if (strcmp(recibido.dni_empleado, "FIN") == 0) break;
+
+            					Empleado emp(recibido.dni_empleado, recibido.nombre_empleado, 0, recibido.id_super, recibido.puesto, 0);
+            					cacheEmpleados.push_back(emp);
+            					}
+            				datosEmpleadosCargados = true;
+            				cout << "\n[INFO] Datos de empleados descargados del servidor y almacenados en cache." << endl;
+            			}
+
+            			cout << "\n--- LISTADO DE EMPLEADOS (CACHE LOCAL) ---" << endl;
+            			for (size_t i = 0; i < cacheEmpleados.size(); i++) {
+            				EmpleadoData temp;
+            				strcpy(temp.dni_empleado, cacheEmpleados[i].getDni());
+            				strcpy(temp.nombre_empleado, cacheEmpleados[i].getNombre());
+            				strcpy(temp.puesto, cacheEmpleados[i].getPuesto());
+            				temp.id_super = cacheEmpleados[i].getSuper();
+            				gui.mostrarUnEmpleado(temp);
+            			}
+            			break;
+            		}
+            		case 5: { // Mostrar empleados de un supermercado
+            			if (!datosEmpleadosCargados) {
+            				cout << "\n[AVISO] Primero debes cargar la lista de empleados (Entra en la Opcion 4)." << endl;
+            				break;
+            			}
+
+            			int idBuscado = gui.pedirIdSuper();
+            			cout << "\n--- EMPLEADOS DEL SUPERMERCADO " << idBuscado << " ---" << endl;
+
+            			bool encontrado = false;
+            			for (size_t i = 0; i < cacheEmpleados.size(); i++) {
+            				if (cacheEmpleados[i].getSuper() == idBuscado) {
+            					EmpleadoData temp;
+            					strcpy(temp.dni_empleado, cacheEmpleados[i].getDni());
+            					strcpy(temp.nombre_empleado, cacheEmpleados[i].getNombre());
+            					strcpy(temp.puesto, cacheEmpleados[i].getPuesto());
+            					temp.id_super = cacheEmpleados[i].getSuper();
+            					gui.mostrarUnEmpleado(temp);
+            					encontrado = true;
+            				}
+            			}
+            			if (!encontrado) cout << "No hay empleados registrados en este supermercado." << endl;
+            			break;
+            		}
+            	}
+            	break;
         }
     } while (opcion != 0);
 

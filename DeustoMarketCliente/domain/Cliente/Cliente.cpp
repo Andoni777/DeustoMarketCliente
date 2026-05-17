@@ -11,7 +11,7 @@ using namespace std;
 		this->email = NULL;
 	}
 
-	Cliente::Cliente(char* nombre, int edad, int id_super, char* email): Persona(nombre, edad, id_super)
+	Cliente::Cliente(char* nombre, int edad, int id_super, char* email): Persona(dni, nombre, edad, id_super)
 	{
 		this->email = new char[strlen(email) + 1];
 		strcpy(this->email, email);

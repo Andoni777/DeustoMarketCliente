@@ -12,13 +12,15 @@ using namespace std;
 		this->salario = 0;
 	}
 
-	Empleado::Empleado(char* nombre, int edad, int id_super, char* puesto, int salario): Persona(nombre, edad, id_super)
+	Empleado::Empleado(char* dni, char* nombre, int edad, int id_super, char* puesto, int salario): Persona(dni, nombre, edad, id_super)
 	{
 		this->puesto = new char[strlen(puesto) + 1];
 		strcpy(this->puesto, puesto);
 		this->salario = salario;
 	}
-
+	Empleado::~Empleado() {
+	    if (this->puesto != NULL) delete[] this->puesto;
+	}
 	char* Empleado::getPuesto() const
 	{
 		return this->puesto;
