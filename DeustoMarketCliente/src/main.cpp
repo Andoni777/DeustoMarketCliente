@@ -16,9 +16,9 @@ bool verificarLoginServidor(SOCKET s) {
     cout << "Contrasena: ";
     cin >> datos.contrasena;
 
-    // 1. Enviamos la operación de Login y los datos
-    OpCode op = OPC_LOGIN;
-    send(s, (char*)&op, sizeof(OpCode), 0);
+    // 1. Enviamos la operación de Login y los datos utilizando un entero estándar (4 bytes)
+    int op = (int)OPC_LOGIN;
+    send(s, (char*)&op, sizeof(int), 0);
     send(s, (char*)&datos, sizeof(LoginData), 0);
 
     // 2. Esperamos la respuesta del servidor (un simple int: 1 = OK, 0 = Error)
@@ -74,12 +74,8 @@ int main(int argc, char **argv) {
 
     cout << "Conectado al servidor de DeustoMarket!" << endl;
 
-    if (!verificarLoginServidor(s)) {
-    	OpCode exit = OPC_EXIT;
-    	send(s, (char*)&exit, sizeof(OpCode), 0);
-    	closesocket(s);
-    	WSACleanup();
-    	return 0;
+    while (!verificarLoginServidor(s)) {
+        cout << "Inténtalo de nuevo.\n" << endl;
     }
 
     do {
@@ -92,13 +88,12 @@ int main(int argc, char **argv) {
                 switch(subOpcion){
 
                     case 1: { // Añadir super
-                        OpCode op = OPC_ADD_SUPER;
+                        int op = (int)OPC_ADD_SUPER;
                         SupermercadoData data = gui.pedirDatosSuper();
-                        send(s, (char*)&op, sizeof(OpCode), 0);
+                        send(s, (char*)&op, sizeof(int), 0);
                         send(s, (char*)&data, sizeof(SupermercadoData), 0);
                         cout << "Peticion de alta enviada." << endl;
 
-                        // Si la cache estaba cargada, añadimos el nuevo objeto localmente
                         if (datosCargados) {
                             SuperMercado nuevo(data.id_super, data.nombre, data.direccion);
                             cacheSupers.push_back(nuevo);
@@ -107,13 +102,12 @@ int main(int argc, char **argv) {
                     }
 
                     case 2: { // Modificar super
-                        OpCode op = OPC_UPDATE_SUPER;
+                        int op = (int)OPC_UPDATE_SUPER;
                         SupermercadoData data = gui.pedirDatosSuper();
-                        send(s, (char*)&op, sizeof(OpCode), 0);
+                        send(s, (char*)&op, sizeof(int), 0);
                         send(s, (char*)&data, sizeof(SupermercadoData), 0);
                         cout << "Peticion de modificacion enviada." << endl;
 
-                        // Modificamos localmente el objeto
                         if (datosCargados) {
                             for (size_t i = 0; i < cacheSupers.size(); i++) {
                                 if (cacheSupers[i].getIdSuper() == data.id_super) {
@@ -127,18 +121,17 @@ int main(int argc, char **argv) {
                     }
 
                     case 3: { // Eliminar super
-                        OpCode op = OPC_DEL_SUPER;
+                        int op = (int)OPC_DEL_SUPER;
                         SupermercadoData data;
                         data.id_super = gui.pedirIdSuper();
-                        send(s, (char*)&op, sizeof(OpCode), 0);
+                        send(s, (char*)&op, sizeof(int), 0);
                         send(s, (char*)&data, sizeof(SupermercadoData), 0);
                         cout << "Peticion de borrado enviada." << endl;
 
-                        // OPTIMIZACIÓN: Eliminamos de nuestra lista local
                         if (datosCargados) {
                             for (auto it = cacheSupers.begin(); it != cacheSupers.end(); ++it) {
                                 if (it->getIdSuper() == data.id_super) {
-                                    cacheSupers.erase(it); // Se elimina del vector y el destructor de la clase libera su memoria
+                                    cacheSupers.erase(it);
                                     break;
                                 }
                             }
@@ -147,28 +140,23 @@ int main(int argc, char **argv) {
                     }
 
                     case 4: { // Mostrar supers
-                        // Si NO están cargados, vamos al servidor
-                        if (!datosCargados) {
-                            OpCode op = OPC_GET_ALL_SUPER;
-                            send(s, (char*)&op, sizeof(OpCode), 0);
+                    	if (!datosCargados) {
+                    	    int opEnviar = (int)OPC_GET_ALL_SUPER;
+                    	    send(s, (char*)&opEnviar, sizeof(int), 0);
 
-                            SupermercadoData recibido;
-                            while(recv(s, (char*)&recibido, sizeof(SupermercadoData), 0) > 0) {
-                                if(recibido.id_super == -1) break;
+                    	    SupermercadoData recibido;
+                    	    while(recv(s, (char*)&recibido, sizeof(SupermercadoData), 0) > 0) {
+                    	        if(recibido.id_super == -1) break;
 
-                                // Convertimos el STRUCT de red a OBJETO de C++
-                                SuperMercado sm(recibido.id_super, recibido.nombre, recibido.direccion);
-                                // Lo metemos en el vector
-                                cacheSupers.push_back(sm);
-                            }
-                            datosCargados = true; // Ya no volveremos a pedirlo al servidor
-                            cout << "\n[INFO] Datos descargados del servidor y almacenados en cache." << endl;
-                        }
+                    	        SuperMercado sm(recibido.id_super, recibido.nombre, recibido.direccion);
+                    	        cacheSupers.push_back(sm);
+                    	    }
+                    	    datosCargados = true;
+                    	    cout << "\n[INFO] Datos descargados del servidor y almacenados en cache." << endl;
+                    	}
 
-                        // Pintamos los datos leyendo de la memoria RAM del Cliente
                         cout << "\n--- LISTADO DE SUPERMERCADOS (CACHE LOCAL) ---" << endl;
                         for (size_t i = 0; i < cacheSupers.size(); i++) {
-                            // Convertimos el objeto de vuelta a un struct temporal para reutilizar tu funcion gui.mostrarUnSuper
                             SupermercadoData temp;
                             temp.id_super = cacheSupers[i].getIdSuper();
                             strcpy(temp.nombre, cacheSupers[i].getNombreSuper());
@@ -185,14 +173,14 @@ int main(int argc, char **argv) {
                 gui.mostrarMenuGestIyP();
                 break;
 
-            case 3:
+            case 3: { // Gestion empleados
             	int subOpcion = gui.mostrarMenuGestEmpleado();
 
             	switch(subOpcion){
-            		case 1: { //Añadir empleado
-            			OpCode op = OPC_ADD_EMPLEADO;
+            		case 1: { // Añadir empleado
+            			int op = (int)OPC_ADD_EMPLEADO;
             			EmpleadoData data = gui.pedirDatosEmpleado();
-            			send(s, (char*)&op, sizeof(OpCode), 0);
+            			send(s, (char*)&op, sizeof(int), 0);
             			send(s, (char*)&data, sizeof(EmpleadoData), 0);
             			cout << "Peticion de alta enviada al servidor." << endl;
             			if (datosEmpleadosCargados) {
@@ -203,10 +191,10 @@ int main(int argc, char **argv) {
             		}
 
             		case 2: { // Eliminar empleado
-            			OpCode op = OPC_DEL_EMPLEADO;
+            			int op = (int)OPC_DEL_EMPLEADO;
             			EmpleadoData data;
             		    gui.pedirDniEmpleado(data.dni_empleado);
-            		    send(s, (char*)&op, sizeof(OpCode), 0);
+            		    send(s, (char*)&op, sizeof(int), 0);
             		    send(s, (char*)&data, sizeof(EmpleadoData), 0);
             		    cout << "Peticion de baja enviada al servidor." << endl;
             		    if (datosEmpleadosCargados) {
@@ -220,13 +208,13 @@ int main(int argc, char **argv) {
             		    break;
             		}
             		case 3: { // Modificar empleado
-            			OpCode op = OPC_UPDATE_EMPLEADO;
+            			int op = (int)OPC_UPDATE_EMPLEADO;
             			cout << "\n--- Modificando Empleado ---" << endl;
             			cout << "NOTA: Introduce el DNI del empleado que quieres modificar, y luego sus nuevos datos." << endl;
 
             			EmpleadoData data = gui.pedirDatosEmpleado();
 
-            			send(s, (char*)&op, sizeof(OpCode), 0);
+            			send(s, (char*)&op, sizeof(int), 0);
             			send(s, (char*)&data, sizeof(EmpleadoData), 0);
             			cout << "Peticion de modificacion enviada al servidor." << endl;
 
@@ -244,8 +232,8 @@ int main(int argc, char **argv) {
             		}
             		case 4: { // Mostrar todos los empleados
             			if (!datosEmpleadosCargados) {
-            				OpCode op = OPC_GET_ALL_EMPLEADO;
-            				send(s, (char*)&op, sizeof(OpCode), 0);
+            				int op = (int)OPC_GET_ALL_EMPLEADO;
+            				send(s, (char*)&op, sizeof(int), 0);
 
             				EmpleadoData recibido;
             				while(recv(s, (char*)&recibido, sizeof(EmpleadoData), 0) > 0) {
@@ -295,11 +283,12 @@ int main(int argc, char **argv) {
             		}
             	}
             	break;
+            }
         }
     } while (opcion != 0);
 
-    OpCode exit = OPC_EXIT;
-    send(s, (char*)&exit, sizeof(OpCode), 0);
+    int exit = (int)OPC_EXIT;
+    send(s, (char*)&exit, sizeof(int), 0);
     closesocket(s);
     WSACleanup();
 }
