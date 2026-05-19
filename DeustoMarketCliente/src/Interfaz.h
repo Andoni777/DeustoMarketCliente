@@ -1,13 +1,14 @@
 /*
  * Interfaz.h
  *
- *  Created on: 11 may 2026
- *      Author: andoni.g
+ * Created on: 11 may 2026
+ * Author: andoni.g
  */
 
 #ifndef SRC_INTERFAZ_H_
 #define SRC_INTERFAZ_H_
 #include "../domain/Protocolo.h"
+
 class Interfaz {
 
 public:
@@ -19,7 +20,7 @@ public:
 
 	// SubMenus
 	int mostrarMenuGestSuper();
-	int mostrarMenuGestIyP();
+	int mostrarMenuGestIyP(); // Dejamos esta aquí
 	int mostrarMenuGestEmpleado();
 	int mostrarLogs();
 
@@ -34,7 +35,12 @@ public:
 	EmpleadoData pedirDatosEmpleado();
 	void mostrarUnEmpleado(const EmpleadoData& e);
 	void pedirDniEmpleado(char* dni);
-};
 
+	// Inventario y producto
+	ProductoData pedirDatosProducto();
+	int pedirIdProducto();
+	InverntarioData pedirDatosStock();
+	void mostrarUnStock(InverntarioData inv);
+};
 
 #endif /* SRC_INTERFAZ_H_ */

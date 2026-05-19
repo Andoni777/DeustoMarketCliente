@@ -5,6 +5,7 @@
 #include "../domain/Empleado/Empleado.h"
 #include "../domain/SuperMercado/Supermercado.h"
 #include "../domain/Protocolo.h"
+#include "../domain/Producto.h"
 #include "Interfaz.h"
 using namespace std;
 
@@ -41,6 +42,9 @@ int main(int argc, char **argv) {
     // Variables para optimizar accesos a la BDD (Cache local)
     vector<SuperMercado> cacheSupers;
     bool datosCargados = false; // Nos dice si ya hemos descargado los datos alguna vez
+
+    vector<Producto> cacheProductos;
+    bool datosProductosCargados = false;
 
     vector<Empleado> cacheEmpleados;
     bool datosEmpleadosCargados = false;
@@ -169,9 +173,107 @@ int main(int argc, char **argv) {
                 }
                 break;
             }
-            case 2:
-                gui.mostrarMenuGestIyP();
-                break;
+            case 2: { // Gestion de Inventario y Productos
+				int subOpcion = gui.mostrarMenuGestIyP();
+
+				switch(subOpcion) {
+
+					case 1: { // Anadir nuevo producto al catalogo
+						int op = (int)OPC_ADD_PRODUCTO;
+						ProductoData data = gui.pedirDatosProducto();
+
+						send(s, (char*)&op, sizeof(int), 0);
+						send(s, (char*)&data, sizeof(ProductoData), 0);
+						cout << "Peticion de alta de producto enviada." << endl;
+
+						if (datosProductosCargados) {
+							// Usamos las variables con el nombre exacto de tu Protocolo.h
+							Producto nuevo(data.id_producto, data.nombre_producto, data.precio_producto);
+							cacheProductos.push_back(nuevo);
+						}
+						break;
+					}
+
+					case 2: { // Eliminar producto
+						int op = (int)OPC_DEL_PROD;
+						ProductoData data;
+						data.id_producto = gui.pedirIdProducto();
+
+						send(s, (char*)&op, sizeof(int), 0);
+						send(s, (char*)&data, sizeof(ProductoData), 0);
+						cout << "Peticion de borrado de producto enviada." << endl;
+
+						if (datosProductosCargados) {
+							for (auto it = cacheProductos.begin(); it != cacheProductos.end(); ++it) {
+								if (it->getIdProducto() == data.id_producto) {
+									cacheProductos.erase(it);
+									break;
+								}
+							}
+						}
+						break;
+					}
+
+					case 3: { // Modificar precio de producto
+						int op = (int)OPC_UPDATE_PRICE;
+						ProductoData data = gui.pedirDatosProducto();
+
+						send(s, (char*)&op, sizeof(int), 0);
+						send(s, (char*)&data, sizeof(ProductoData), 0);
+						cout << "Peticion de modificacion de precio enviada." << endl;
+
+						if (datosProductosCargados) {
+							for (size_t i = 0; i < cacheProductos.size(); i++) {
+								if (cacheProductos[i].getIdProducto() == data.id_producto) {
+									// Sincronizamos con el nombre exacto de tu struct precio_producto
+									cacheProductos[i].setPrecio(data.precio_producto);
+									break;
+								}
+							}
+						}
+						break;
+					}
+
+					case 4: { // Actualizar stock de un supermercado
+						int op = (int)OPC_UPDATE_STOCK_SUPER;
+						// Usamos InverntarioData (con la 'r' intermedia tal cual lo definiste)
+						InverntarioData data = gui.pedirDatosStock();
+
+						send(s, (char*)&op, sizeof(int), 0);
+						send(s, (char*)&data, sizeof(InverntarioData), 0);
+						cout << "Peticion de actualizacion de stock enviada al servidor." << endl;
+						break;
+					}
+
+					case 5: { // Mostrar stock de un supermercado especifico
+						int op = (int)OPC_GET_STOCK_SUPER;
+						int idSuperBuscado = gui.pedirIdSuper();
+
+						send(s, (char*)&op, sizeof(int), 0);
+						send(s, (char*)&idSuperBuscado, sizeof(int), 0);
+
+						cout << "\n--- STOCK DEL SUPERMERCADO " << idSuperBuscado << " (DESDE SERVIDOR) ---" << endl;
+
+						// Usamos InverntarioData para recibir el flujo continuo de stock
+						InverntarioData recibido;
+						while(recv(s, (char*)&recibido, sizeof(InverntarioData), 0) > 0) {
+							// Bandera de fin de transmisión enviada por el servidor
+							if(recibido.id_producto == -1) break;
+
+							gui.mostrarUnStock(recibido);
+						}
+						break;
+					}
+
+					case 0: // Salir al menu principal
+						break;
+
+					default:
+						cout << "[AVISO] Opcion no valida en el menu de inventario." << endl;
+						break;
+				}
+				break;
+			}
 
             case 3: { // Gestion empleados
             	int subOpcion = gui.mostrarMenuGestEmpleado();

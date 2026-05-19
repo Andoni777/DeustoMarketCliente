@@ -51,7 +51,7 @@ int Interfaz::mostrarMenuGestIyP(){
 	std::cout << "\n\nIntroduce el numero de tu seleccion: ";
 
 	return leerOpcion();
-	}
+}
 
 int Interfaz::mostrarMenuGestEmpleado(){
 	std::cout << "\n =========================================";
@@ -83,9 +83,9 @@ int Interfaz::mostrarMenu(){
 	return leerOpcion();
 }
 
-// Funciones auxiliares
-
-//Supers
+// =========================================================
+// Funciones auxiliares - SUPERMERCADOS
+// =========================================================
 
 SupermercadoData Interfaz::pedirDatosSuper(){
 	SupermercadoData nuevo;
@@ -119,14 +119,16 @@ int Interfaz::pedirIdSuper(){
 	return id;
 }
 
-
 void Interfaz::mostrarUnSuper(const SupermercadoData& d){
 	cout << "-------------------------------------------" << endl;
 	cout << "  ID:        " << d.id_super << endl;
 	cout << "  NOMBRE:    " << d.nombre << endl;
 	cout << "  DIRECCION: " << d.direccion << endl;
-
 }
+
+// =========================================================
+// Funciones auxiliares - EMPLEADOS
+// =========================================================
 
 EmpleadoData Interfaz::pedirDatosEmpleado() {
     EmpleadoData nuevo;
@@ -166,4 +168,59 @@ void Interfaz::mostrarUnEmpleado(const EmpleadoData& e) {
     cout << "  NOMBRE:    " << e.nombre_empleado << endl;
     cout << "  PUESTO:    " << e.puesto << endl;
     cout << "  ID SUPER:  " << e.id_super << endl;
+}
+
+// =========================================================
+// Funciones auxiliares - INVENTARIO Y PRODUCTOS (¡AÑADIDO!)
+// =========================================================
+
+ProductoData Interfaz::pedirDatosProducto() {
+    ProductoData nuevo;
+    string temp;
+
+    cout << "\n--- INTRODUCIR DATOS DEL PRODUCTO ---" << endl;
+
+    // Ponemos el ID a 0 temporalmente, ya que la Base de Datos le asignará el suyo automáticamente
+    nuevo.id_producto = 0;
+
+    cout << "Nombre del Producto: ";
+    cin.ignore(1000, '\n'); // Limpiamos buffer
+    getline(cin, temp);
+    strncpy(nuevo.nombre_producto, temp.c_str(), sizeof(nuevo.nombre_producto) - 1);
+    nuevo.nombre_producto[sizeof(nuevo.nombre_producto) - 1] = '\0';
+
+    cout << "Precio: ";
+    cin >> nuevo.precio_producto;
+
+    cout << "ID de la Categoria: ";
+    cin >> nuevo.id_categoria;
+
+    return nuevo;
+}
+
+int Interfaz::pedirIdProducto() {
+    int id;
+    cout << "Introduce el ID del producto: ";
+    cin >> id;
+    return id;
+}
+
+InverntarioData Interfaz::pedirDatosStock() {
+    InverntarioData nuevo;
+
+    cout << "\n--- ACTUALIZAR STOCK EN SUPERMERCADO ---" << endl;
+    cout << "ID del Supermercado: ";
+    cin >> nuevo.id_super;
+    cout << "ID del Producto: ";
+    cin >> nuevo.id_producto;
+    cout << "Cantidad de Stock disponible: ";
+    cin >> nuevo.stock;
+
+    return nuevo;
+}
+
+void Interfaz::mostrarUnStock(InverntarioData inv) {
+    cout << "-------------------------------------------" << endl;
+    cout << "  ID PRODUCTO: " << inv.id_producto << endl;
+    cout << "  STOCK:       " << inv.stock << " unidades." << endl;
 }
