@@ -15,6 +15,7 @@ class Persona
 protected:
 	int contador_id;
 	int id;
+	char* dni;
 	char* nombre;
 	int edad;
 	int id_super;
@@ -22,14 +23,16 @@ protected:
 public:
 
 	Persona();
-	Persona(char* nombre, int edad, int id_super);
+	Persona(char* dni, char* nombre, int edad, int id_super);
 	virtual ~Persona();
 
 	int getID() const;
+	char* getDni() const;
 	char* getNombre() const;
 	int getEdad() const;
 	int getSuper() const;
 
+	void setDni(char* nuevo_dni);
 	void setNombre(char* nuevo_nombre);
 	void setEdad(int edadNueva);
 	void setSuper(int super_nuevo);

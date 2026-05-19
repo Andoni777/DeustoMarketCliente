@@ -15,7 +15,8 @@ private:
 
 public:
 	Empleado();
-	Empleado(char* nombre, int edad, int id_super, char* puesto, int salario);
+	Empleado(char* dni, char* nombre, int edad, int id_super, char* puesto, int salario);
+	virtual ~Empleado();
 
 	char* getPuesto() const;
 	int getSalario() const;
